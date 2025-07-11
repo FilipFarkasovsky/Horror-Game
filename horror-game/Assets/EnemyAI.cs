@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UIElements;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -15,9 +16,15 @@ public class EnemyAI : MonoBehaviour
     public float viewAngle;
     public LayerMask obstructionMask;
 
+    [Header("Interact")]
+    public float interactDistance;
+    public LayerMask interactableLayer;
+
+
     [Header("Movement Speeds")]
     public float defaultSpeed;
     public float chaseSpeed;
+    public float doorBurstspeed;
 
     [Header("Behavior Settings")]
     public float aggression;
@@ -63,7 +70,7 @@ public class EnemyAI : MonoBehaviour
     void Update()
     {
         CheckLineOfSight();
-        Debug.Log(potentialTargets.Length);
+        Interact();
 
         if (canSeePlayer)
         {
@@ -72,6 +79,14 @@ public class EnemyAI : MonoBehaviour
         else
         {
             HandleLossOfSight();
+        }
+
+        if (enemyType == EnemyType.Aggresive)
+        {
+            if (target != null)
+            {
+                agent.SetDestination(target.position);
+            }
         }
 
         if (enemyType == EnemyType.Stealth && !isChasing)
@@ -92,6 +107,25 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    void Interact()
+    {
+        Ray ray = new Ray(transform.position, transform.forward);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactableLayer))
+        {
+            Door door = hit.collider.GetComponent<Door>();
+            if (door != null && !door.isOpen)
+            {
+                if (isChasing)
+                {
+                    door.ToggleDoor(doorBurstspeed);
+                } else
+                {
+                    door.ToggleDoor(0f);
+                }
+            }
+        }
+    }
     void HandleChase()
     {
         isChasing = true;
@@ -121,13 +155,6 @@ public class EnemyAI : MonoBehaviour
                 {
                     StartWandering();
                 }
-            }
-        }
-        else if (isChasing)
-        {
-            if (target != null)
-            {
-                agent.SetDestination(target.position);
             }
         }
     }
@@ -175,7 +202,6 @@ public class EnemyAI : MonoBehaviour
                         {
                             closestDistance = distanceToPlayer;
                             closestTarget = o.transform;
-                            Debug.Log(o.gameObject.name + "is my target!");
                             canSeePlayer = true;
                         }
                     }
@@ -207,11 +233,18 @@ public class EnemyAI : MonoBehaviour
 
     public void OnHeardSound(Vector3 soundPosition)
     {
-        if (enemyType == EnemyType.Stealth && !canSeePlayer)
+        if (enemyType == EnemyType.Stealth)
         {
-            wandering = false;
-            investigating = true;
-            agent.SetDestination(soundPosition);
+            if (!canSeePlayer && !isChasing)
+            {
+                wandering = false;
+                investigating = true;
+                agent.SetDestination(soundPosition);
+            }
+            if (!canSeePlayer && isChasing)
+            {
+                agent.SetDestination(soundPosition);
+            }
         }
     }
     Vector3 ChooseRandomLocation()

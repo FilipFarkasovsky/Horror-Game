@@ -151,8 +151,13 @@ MonoBehaviour:
   viewAngle: 190
   obstructionMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 65
+  interactDistance: 5
+  interactableLayer:
+    serializedVersion: 2
+    m_Bits: 64
   defaultSpeed: 3
   chaseSpeed: 10
+  doorBurstspeed: 10
   aggression: 5
   wanderInterval: 2
