@@ -10,7 +10,8 @@ public class IKFootSolver : MonoBehaviour
     public float baseStepDistance;
     public float baseSpeed;
     public float stepHeight;
-    public float velocityScaler;
+    private float velocityScaler;
+    public float stepDistanceAdjust;
     public Vector3 footOffset;
 
     [Header("Dynamic Scaling")]
@@ -37,13 +38,12 @@ public class IKFootSolver : MonoBehaviour
     void Update()
     {
         float velocity = agent != null ? agent.velocity.magnitude : 0f;
-        //baseSpeed = agent.speed;
-
-        // Avoid instability at low speeds
-        if (velocity < 0.05f) velocity = 0f;
+        velocityScaler = Mathf.Sqrt(velocity) * stepDistanceAdjust;
 
         stepDistance = baseStepDistance + velocity * 0.15f;
         speed = baseSpeed + velocity * 0.5f;
+
+        Debug.Log(velocity);
 
         transform.position = currentPosition;
 
@@ -72,7 +72,7 @@ public class IKFootSolver : MonoBehaviour
                 : body.forward;
 
             // Apply foot offset in local space
-            Vector3 localOffset = new Vector3(footOffset.x, 0, footOffset.z);
+            Vector3 localOffset = new Vector3(footOffset.x, 0f, footOffset.z);
             Vector3 worldOffset = body.TransformDirection(localOffset);
 
             Vector3 rayOrigin = body.position + forward * velocityScaler + worldOffset;
@@ -104,7 +104,7 @@ public class IKFootSolver : MonoBehaviour
             ? agent.velocity.normalized
             : body.forward;
 
-        Vector3 localOffset = new Vector3(footOffset.x, 0, footOffset.z);
+        Vector3 localOffset = new Vector3(footOffset.x, 0f, footOffset.z);
         Vector3 worldOffset = body.TransformDirection(localOffset);
         Vector3 rayOrigin = body.position + forward * velocityScaler + worldOffset;
 
